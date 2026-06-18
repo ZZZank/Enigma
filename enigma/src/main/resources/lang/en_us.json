@@ -62,6 +62,7 @@
 	"menu.search.class": "Search Classes",
 	"menu.search.method": "Search Methods",
 	"menu.search.field": "Search Fields",
+	"menu.search.param": "Search Parameters",
 	"menu.search.only_exact_matches": "Only show exact matches",
 	"menu.collab": "Collab",
 	"menu.collab.connect": "Connect to Server",
