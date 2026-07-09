@@ -32,6 +32,7 @@ import cuchaz.enigma.mcp.tool.GetEnigmaInfoTool;
 import cuchaz.enigma.mcp.tool.GetEntryTool;
 import cuchaz.enigma.mcp.tool.ListMembersTool;
 import cuchaz.enigma.mcp.tool.MultiEditMappingTool;
+import cuchaz.enigma.mcp.tool.ReloadMappingTool;
 import cuchaz.enigma.mcp.tool.SaveTool;
 import cuchaz.enigma.mcp.tool.SearchEntryTool;
 import cuchaz.enigma.mcp.tool.TypedArgTool;
@@ -208,6 +209,7 @@ public class EnigmaMcpMain {
 						new FindInheritanceTool(project),
 						new DecompileTool(project, new ClassHandleProvider(project, Decompilers.VINEFLOWER)),
 						new SaveTool(project, this),
+						new ReloadMappingTool(project, this),
 						new GetEnigmaInfoTool(project, this)
 				)
 				.map((TypedArgTool<?> spec) -> TypedArgTool.createMcpTool(TypedArgTool.COMMON_CONFIG, spec))
