@@ -3,7 +3,6 @@ package cuchaz.enigma.mcp;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
@@ -17,7 +16,6 @@ import io.modelcontextprotocol.spec.McpSchema;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
-import joptsimple.ValueConverter;
 import joptsimple.util.EnumConverter;
 
 import cuchaz.enigma.Enigma;
@@ -37,6 +35,7 @@ import cuchaz.enigma.mcp.tool.MultiEditMappingTool;
 import cuchaz.enigma.mcp.tool.SaveTool;
 import cuchaz.enigma.mcp.tool.SearchEntryTool;
 import cuchaz.enigma.mcp.tool.TypedArgTool;
+import cuchaz.enigma.mcp.util.PathConverter;
 import cuchaz.enigma.source.Decompilers;
 import cuchaz.enigma.translation.mapping.EntryMapping;
 import cuchaz.enigma.translation.mapping.serde.MappingFormat;
@@ -91,14 +90,6 @@ public class EnigmaMcpMain {
 
 		System.err.println("Starting enigma-mcp server");
 
-		runServer(profileFile, jars, libraries, mappingFormat, mappingsFile);
-	}
-
-	private static void runServer(Path profileFile,
-			List<Path> jars,
-			List<Path> libraries,
-			MappingFormat mappingFormat,
-			Path mappingsFile) {
 		McpSyncServer server = null;
 
 		try {
@@ -112,65 +103,11 @@ public class EnigmaMcpMain {
 			System.err.println("Indexing jar...");
 			EnigmaProject project = enigma.openJars(jars, libraries, ProgressListener.none());
 
-			if (mappingFormat == null) {
-				assert mappingsFile == null;
-				project.setMappings(null);
-			} else {
-				if (!Files.exists(mappingsFile)) {
-					throw new IllegalArgumentException("Mapping file not found");
-				}
+			var main = new EnigmaMcpMain(project);
 
-				// Validate mapping file path matches the format's expected file type
-				MappingFormat.FileType fileType = mappingFormat.getFileType();
+			main.loadMapping(mappingFormat, mappingsFile);
 
-				if (fileType.isDirectory()) {
-					if (!Files.isDirectory(mappingsFile)) {
-						throw new IllegalArgumentException("Format " + mappingFormat + " expects a directory, but got: " + mappingsFile);
-					}
-				} else {
-					String fileName = mappingsFile.getFileName().toString();
-
-					if (fileType.extensions().stream().noneMatch(fileName::endsWith)) {
-						String expected = String.join(" or ", fileType.extensions());
-						throw new IllegalArgumentException("Format " + mappingFormat + " expects " + expected + " file, but mapping path does not match: " + mappingsFile);
-					}
-				}
-
-				System.err.println("Reading mappings...");
-				EntryTree<EntryMapping> mappings = mappingFormat.read(
-						mappingsFile,
-						ProgressListener.none(),
-						profile.getMappingSaveParameters(),
-						project.getJarIndex()
-				);
-				project.setMappings(mappings);
-			}
-
-			StdioServerTransportProvider transport = new StdioServerTransportProvider(McpJsonDefaults.getMapper());
-
-			List<McpServerFeatures.SyncToolSpecification> tools = Stream.of(
-							new SearchEntryTool(project),
-							new GetEntryTool(project),
-							new EditMappingTool(project),
-							new MultiEditMappingTool(project),
-							new ListMembersTool(project),
-							new FindUnmappedTool(project),
-							new FindReferenceTool(project),
-							new FindInheritanceTool(project),
-							new DecompileTool(project, new ClassHandleProvider(project, Decompilers.VINEFLOWER)),
-							new SaveTool(project, mappingsFile, mappingFormat, profile.getMappingSaveParameters()),
-							new GetEnigmaInfoTool(project, mappingsFile, mappingFormat)
-					)
-					.map((TypedArgTool<?> spec) -> TypedArgTool.createMcpTool(TypedArgTool.COMMON_CONFIG, spec))
-					.toList();
-
-			server = McpServer.sync(transport)
-					.serverInfo("enigma-mcp", Enigma.VERSION)
-					.capabilities(McpSchema.ServerCapabilities.builder()
-							.tools(true)
-							.build())
-					.tools(tools)
-					.build();
+			server = main.runServer();
 
 			System.err.println("enigma-mcp server initialized");
 
@@ -193,35 +130,89 @@ public class EnigmaMcpMain {
 		}
 	}
 
-	private static class PathConverter implements ValueConverter<Path> {
-		public static final ValueConverter<Path> INSTANCE = new PathConverter();
+	private final EnigmaProject project;
+	private MappingFormat mappingFormat;
+	private Path mappingsFile;
 
-		PathConverter() {
-		}
+	public EnigmaMcpMain(EnigmaProject project) {
+		this.project = project;
+	}
 
-		@Override
-		public Path convert(String path) {
-			if (path.startsWith("~")) {
-				Path dirHome = Paths.get(System.getProperty("user.home"));
+	public EnigmaProject getProject() {
+		return project;
+	}
 
-				if (path.startsWith("~/")) {
-					return dirHome.resolve(path.substring(2));
-				} else {
-					return dirHome.getParent().resolve(path.substring(1));
+	public MappingFormat getMappingFormat() {
+		return mappingFormat;
+	}
+
+	public Path getMappingsFile() {
+		return mappingsFile;
+	}
+
+	public void loadMapping(MappingFormat mappingFormat, Path mappingsFile) throws IOException, MappingParseException {
+		if (mappingFormat == null) {
+			assert mappingsFile == null;
+			project.setMappings(null);
+		} else {
+			if (!Files.exists(mappingsFile)) {
+				throw new IllegalArgumentException("Mapping file not found");
+			}
+
+			// Validate mapping file path matches the format's expected file type
+			MappingFormat.FileType fileType = mappingFormat.getFileType();
+
+			if (fileType.isDirectory()) {
+				if (!Files.isDirectory(mappingsFile)) {
+					throw new IllegalArgumentException("Format " + mappingFormat
+							+ " expects a directory, but got: " + mappingsFile);
+				}
+			} else {
+				String fileName = mappingsFile.getFileName().toString();
+
+				if (fileType.extensions().stream().noneMatch(fileName::endsWith)) {
+					String expected = String.join(" or ", fileType.extensions());
+					throw new IllegalArgumentException("Format " + mappingFormat
+							+ " expects " + expected + " file, but mapping path does not match: " + mappingsFile);
 				}
 			}
 
-			return Paths.get(path);
+			System.err.println("Reading mappings...");
+			EntryTree<EntryMapping> mappings = mappingFormat.read(
+					mappingsFile,
+					ProgressListener.none(),
+					project.getEnigma().getProfile().getMappingSaveParameters(),
+					project.getJarIndex()
+			);
+			project.setMappings(mappings);
 		}
+	}
 
-		@Override
-		public Class<? extends Path> valueType() {
-			return Path.class;
-		}
+	private McpSyncServer runServer() {
+		StdioServerTransportProvider transport = new StdioServerTransportProvider(McpJsonDefaults.getMapper());
 
-		@Override
-		public String valuePattern() {
-			return "path";
-		}
+		List<McpServerFeatures.SyncToolSpecification> tools = Stream.of(
+						new SearchEntryTool(project),
+						new GetEntryTool(project),
+						new EditMappingTool(project),
+						new MultiEditMappingTool(project),
+						new ListMembersTool(project),
+						new FindUnmappedTool(project),
+						new FindReferenceTool(project),
+						new FindInheritanceTool(project),
+						new DecompileTool(project, new ClassHandleProvider(project, Decompilers.VINEFLOWER)),
+						new SaveTool(project, mappingsFile, mappingFormat, project.getEnigma().getProfile().getMappingSaveParameters()),
+						new GetEnigmaInfoTool(project, mappingsFile, mappingFormat)
+				)
+				.map((TypedArgTool<?> spec) -> TypedArgTool.createMcpTool(TypedArgTool.COMMON_CONFIG, spec))
+				.toList();
+
+		return McpServer.sync(transport)
+				.serverInfo("enigma-mcp", Enigma.VERSION)
+				.capabilities(McpSchema.ServerCapabilities.builder()
+						.tools(true)
+						.build())
+				.tools(tools)
+				.build();
 	}
 }
