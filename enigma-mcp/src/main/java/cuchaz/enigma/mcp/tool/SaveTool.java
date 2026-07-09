@@ -11,14 +11,14 @@ import io.modelcontextprotocol.spec.McpSchema;
 
 import cuchaz.enigma.EnigmaProject;
 import cuchaz.enigma.ProgressListener;
+import cuchaz.enigma.mcp.EnigmaMcpMain;
 import cuchaz.enigma.translation.mapping.EntryRemapper;
 import cuchaz.enigma.translation.mapping.serde.MappingFormat;
-import cuchaz.enigma.translation.mapping.serde.MappingSaveParameters;
 
 /**
  * @author ZZZank
  */
-public record SaveTool(EnigmaProject project, Path mappingsFile, MappingFormat mappingFormat, MappingSaveParameters saveParameters) implements TypedArgTool<SaveTool.ArgObject> {
+public record SaveTool(EnigmaProject project, EnigmaMcpMain main) implements TypedArgTool<SaveTool.ArgObject> {
 	@Override
 	public String name() {
 		return "save";
@@ -38,7 +38,7 @@ public record SaveTool(EnigmaProject project, Path mappingsFile, MappingFormat m
 		EntryRemapper remapper = project.getMapper();
 
 		if (arg.format == null) {
-			arg.format = Objects.requireNonNull(mappingFormat, "No mapping file to start with, so 'format' and 'path' is required.");
+			arg.format = Objects.requireNonNull(main.getMappingFormat(), "No mapping file to start with, so 'format' and 'path' is required.");
 		}
 
 		if (!arg.format.isWritable()) {
@@ -48,7 +48,7 @@ public record SaveTool(EnigmaProject project, Path mappingsFile, MappingFormat m
 		Path targetPath;
 
 		if (arg.path == null) {
-			targetPath = mappingsFile;
+			targetPath = main.getMappingFile();
 		} else {
 			targetPath = Path.of(arg.path);
 		}
@@ -75,7 +75,7 @@ public record SaveTool(EnigmaProject project, Path mappingsFile, MappingFormat m
 					remapper.takeMappingDelta(),
 					targetPath,
 					ProgressListener.none(),
-					saveParameters
+					project.getEnigma().getProfile().getMappingSaveParameters()
 			);
 			return McpTools.ok("Mappings saved to " + targetPath.toAbsolutePath());
 		} catch (Exception e) {

@@ -113,7 +113,7 @@ public class EnigmaMcpMain {
 
 			Thread.currentThread().join();
 		} catch (IOException | MappingParseException | IllegalArgumentException e) {
-			System.err.println("Error starting enigma-mcp server!");
+			System.err.println("Error running enigma-mcp server!");
 			e.printStackTrace(System.err);
 
 			if (server != null) {
@@ -132,7 +132,7 @@ public class EnigmaMcpMain {
 
 	private final EnigmaProject project;
 	private MappingFormat mappingFormat;
-	private Path mappingsFile;
+	private Path mappingFile;
 
 	public EnigmaMcpMain(EnigmaProject project) {
 		this.project = project;
@@ -146,8 +146,8 @@ public class EnigmaMcpMain {
 		return mappingFormat;
 	}
 
-	public Path getMappingsFile() {
-		return mappingsFile;
+	public Path getMappingFile() {
+		return mappingFile;
 	}
 
 	public void loadMapping(MappingFormat mappingFormat, Path mappingsFile) throws IOException, MappingParseException {
@@ -201,8 +201,8 @@ public class EnigmaMcpMain {
 						new FindReferenceTool(project),
 						new FindInheritanceTool(project),
 						new DecompileTool(project, new ClassHandleProvider(project, Decompilers.VINEFLOWER)),
-						new SaveTool(project, mappingsFile, mappingFormat, project.getEnigma().getProfile().getMappingSaveParameters()),
-						new GetEnigmaInfoTool(project, mappingsFile, mappingFormat)
+						new SaveTool(project, this),
+						new GetEnigmaInfoTool(project, this)
 				)
 				.map((TypedArgTool<?> spec) -> TypedArgTool.createMcpTool(TypedArgTool.COMMON_CONFIG, spec))
 				.toList();

@@ -1,23 +1,17 @@
 package cuchaz.enigma.mcp.tool;
 
-import java.nio.file.Path;
-
 import com.fasterxml.jackson.annotation.JsonClassDescription;
 import io.modelcontextprotocol.server.McpSyncServerExchange;
 import io.modelcontextprotocol.spec.McpSchema;
 
 import cuchaz.enigma.Enigma;
 import cuchaz.enigma.EnigmaProject;
-import cuchaz.enigma.translation.mapping.serde.MappingFormat;
+import cuchaz.enigma.mcp.EnigmaMcpMain;
 
 /**
  * @author ZZZank
  */
-public record GetEnigmaInfoTool(
-		EnigmaProject project,
-		Path mappingsFile,
-		MappingFormat mappingFormat
-) implements TypedArgTool<GetEnigmaInfoTool.ArgObject> {
+public record GetEnigmaInfoTool(EnigmaProject project, EnigmaMcpMain main) implements TypedArgTool<GetEnigmaInfoTool.ArgObject> {
 	@Override
 	public String name() {
 		return "get_enigma_info";
@@ -35,8 +29,8 @@ public record GetEnigmaInfoTool(
 		var builder = new StringBuilder();
 		builder.append("Enigma Version: ").append(Enigma.VERSION).append('\n');
 		builder.append("Jar path(s): ").append(project.getJarPaths()).append('\n');
-		builder.append("Mapping File: ").append(mappingsFile).append('\n');
-		builder.append("Mapping Format: ").append(mappingFormat).append('\n');
+		builder.append("Mapping File: ").append(main.getMappingFile()).append('\n');
+		builder.append("Mapping Format: ").append(main.getMappingFormat()).append('\n');
 		return McpTools.ok(builder.toString());
 	}
 
