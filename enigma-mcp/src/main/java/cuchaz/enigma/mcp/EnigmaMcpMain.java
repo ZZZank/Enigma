@@ -152,7 +152,10 @@ public class EnigmaMcpMain {
 
 	public void loadMapping(MappingFormat mappingFormat, Path mappingsFile) throws IOException, MappingParseException {
 		if (mappingFormat == null) {
-			assert mappingsFile == null;
+			if (mappingsFile != null) {
+				throw new IllegalArgumentException("'format' and 'path' should be provided or omitted in pair");
+			}
+
 			project.setMappings(null);
 		} else {
 			if (!Files.exists(mappingsFile)) {
@@ -186,6 +189,9 @@ public class EnigmaMcpMain {
 			);
 			project.setMappings(mappings);
 		}
+
+		this.mappingFormat = mappingFormat;
+		this.mappingFile = mappingsFile;
 	}
 
 	private McpSyncServer runServer() {
