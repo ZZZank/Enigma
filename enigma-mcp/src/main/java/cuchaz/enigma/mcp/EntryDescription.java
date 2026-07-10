@@ -211,7 +211,7 @@ public class EntryDescription {
 	/// pass the result to [#makeOrFindEntry(JarIndex)] to search the jar index.
 	///
 	/// Trailing `-> mappedName` is **not** stripped here; callers must trim it before
-	/// passing, or parsing will fail.
+	/// passing, otherwise parsing may fail or give funny results.
 	///
 	/// @param description string in canonical format
 	/// @return the parsed intermediate representation

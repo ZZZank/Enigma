@@ -51,10 +51,18 @@ public interface TypedArgTool<T> {
 		});
 	}
 
+	/// Name of this tool.
 	String name();
 
+	/// Class that describes the structure of tool call arg. Info annotations like [JsonProperty], [com.fasterxml.jackson.annotation.JsonPropertyDescription]
+	/// will be read for automatic JSON Schema generation.
+	///
+	/// NOTE: [com.fasterxml.jackson.annotation.JsonClassDescription] applied to argObjectType class itself will be used
+	/// as description for the tool, so descriptions of `@JsonClassDescription(...)` should describe the tool, instead
+	/// of arg object.
 	Class<T> argObjectType();
 
+	/// Modify tool builder. Tool description can be generated from [#argObjectType()] so no need to do it here.
 	default McpSchema.Tool.Builder configureToolBuilder(McpSchema.Tool.Builder builder) {
 		return builder;
 	}
