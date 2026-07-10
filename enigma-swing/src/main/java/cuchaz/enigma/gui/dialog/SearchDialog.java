@@ -51,7 +51,6 @@ import cuchaz.enigma.gui.util.GuiUtil;
 import cuchaz.enigma.gui.util.ScaleUtil;
 import cuchaz.enigma.translation.representation.entry.ClassEntry;
 import cuchaz.enigma.translation.representation.entry.FieldEntry;
-import cuchaz.enigma.translation.representation.entry.LocalVariableEntry;
 import cuchaz.enigma.translation.representation.entry.MethodEntry;
 import cuchaz.enigma.translation.representation.entry.ParentedEntry;
 import cuchaz.enigma.utils.I18n;
@@ -219,16 +218,7 @@ public class SearchDialog {
 		su.hit(e);
 		parent.getController().navigateTo(e.obf);
 
-		ClassEntry openTarget;
-
-		if (e.obf instanceof ClassEntry) {
-			openTarget = (ClassEntry) e.obf;
-		} else if (e.obf instanceof LocalVariableEntry) {
-			openTarget = (ClassEntry) e.obf.getParent().getParent();
-		} else {
-			// field and method
-			openTarget = (ClassEntry) e.obf.getParent();
-		}
+		ClassEntry openTarget = e.obf.getContainingClass();
 
 		if (e.deobf != null) {
 			parent.getDeobfPanel().deobfClasses.setSelectionClass(openTarget);
