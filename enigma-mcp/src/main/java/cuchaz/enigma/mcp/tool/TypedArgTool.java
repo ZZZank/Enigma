@@ -59,6 +59,7 @@ public interface TypedArgTool<T> {
 			Lock toolLock = useReadLock ? lock.readLock() : lock.writeLock();
 
 			toolLock.lock();
+
 			try {
 				T argObject = objectMapper.convertValue(request.arguments(), tool.argObjectType());
 				return tool.callTool(exchange, request, argObject);

@@ -7,18 +7,23 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import io.modelcontextprotocol.json.McpJsonDefaults;
 import io.modelcontextprotocol.server.McpServer;
 import io.modelcontextprotocol.server.McpServerFeatures;
 import io.modelcontextprotocol.server.McpSyncServer;
+import io.modelcontextprotocol.server.transport.HttpServletStreamableServerTransportProvider;
 import io.modelcontextprotocol.server.transport.StdioServerTransportProvider;
 import io.modelcontextprotocol.spec.McpSchema;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
 import joptsimple.util.EnumConverter;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
 
 import cuchaz.enigma.Enigma;
 import cuchaz.enigma.EnigmaProfile;
@@ -38,6 +43,7 @@ import cuchaz.enigma.mcp.tool.ReloadMappingTool;
 import cuchaz.enigma.mcp.tool.SaveTool;
 import cuchaz.enigma.mcp.tool.SearchEntryTool;
 import cuchaz.enigma.mcp.tool.TypedArgTool;
+import cuchaz.enigma.mcp.util.ClosableHelper;
 import cuchaz.enigma.mcp.util.PathConverter;
 import cuchaz.enigma.source.Decompilers;
 import cuchaz.enigma.translation.mapping.EntryMapping;
@@ -66,6 +72,9 @@ public class EnigmaMcpMain {
 		OptionSpec<Path> profileOpt = parser.accepts("profile", "Profile json to apply at startup")
 				.withRequiredArg()
 				.withValuesConvertedBy(PathConverter.INSTANCE);
+		OptionSpec<Integer> portOpt = parser.accepts("port", "Port to listen on for HTTP transport. If omitted, uses stdio transport")
+				.withOptionalArg()
+				.ofType(Integer.class);
 		OptionSpec<Void> helpOpt = parser.accepts("help", "Display help message").forHelp();
 
 		OptionSet parsedArgs;
@@ -86,6 +95,7 @@ public class EnigmaMcpMain {
 		MappingFormat mappingFormat = parsedArgs.valueOfOptional(mappingFormatOpt).orElse(null);
 		Path profileFile = parsedArgs.valueOf(profileOpt);
 		List<Path> libraries = parsedArgs.valuesOf(librariesOpt);
+		Integer port = parsedArgs.valueOf(portOpt);
 
 		if ((mappingsFile == null) != (mappingFormat == null)) {
 			throw new IllegalArgumentException("%s and %s should be used in group");
@@ -93,9 +103,8 @@ public class EnigmaMcpMain {
 
 		System.err.println("Starting enigma-mcp server");
 
-		McpSyncServer server = null;
-
-		try {
+		try (var httpServerClosable = new ClosableHelper<>(EnigmaMcpMain::closeHttpServer);
+				var mcpServerClosable = new ClosableHelper<>(McpSyncServer::closeGracefully)) {
 			EnigmaProfile profile = profileFile != null
 					? EnigmaProfile.read(profileFile)
 					: EnigmaProfile.EMPTY;
@@ -106,29 +115,22 @@ public class EnigmaMcpMain {
 			System.err.println("Indexing jar...");
 			EnigmaProject project = enigma.openJars(jars, libraries, ProgressListener.none());
 
-			var main = new EnigmaMcpMain(project);
+			EnigmaMcpMain main = new EnigmaMcpMain(project);
 
 			main.loadMapping(mappingFormat, mappingsFile);
 
-			server = main.runServer();
+			McpSyncServer server = main.runServer(port, mcpServerClosable, httpServerClosable);
 
 			System.err.println("enigma-mcp server initialized");
 
+			server.close();
 			Thread.currentThread().join();
-		} catch (IOException | MappingParseException | IllegalArgumentException e) {
+		} catch (IOException | MappingParseException | IllegalArgumentException | IllegalStateException e) {
 			System.err.println("Error running enigma-mcp server!");
 			e.printStackTrace(System.err);
 
-			if (server != null) {
-				server.closeGracefully();
-			}
-
 			System.exit(1);
 		} catch (InterruptedException e) {
-			if (server != null) {
-				server.closeGracefully();
-			}
-
 			Thread.currentThread().interrupt();
 		}
 	}
@@ -151,6 +153,17 @@ public class EnigmaMcpMain {
 
 	public Path getMappingFile() {
 		return mappingFile;
+	}
+
+	private static void closeHttpServer(Server httpServer) {
+		if (httpServer != null && httpServer.isStarted()) {
+			try {
+				httpServer.stop();
+			} catch (Exception e) {
+				System.err.println("Error stopping HTTP server");
+				e.printStackTrace(System.err);
+			}
+		}
 	}
 
 	public void loadMapping(MappingFormat mappingFormat, Path mappingsFile) throws IOException, MappingParseException {
@@ -197,8 +210,10 @@ public class EnigmaMcpMain {
 		this.mappingFile = mappingsFile;
 	}
 
-	private McpSyncServer runServer() {
-		StdioServerTransportProvider transport = new StdioServerTransportProvider(McpJsonDefaults.getMapper());
+	private McpSyncServer runServer(Integer port, Consumer<McpSyncServer> onMcpServer, Consumer<Server> onHttpServer) {
+		if (port != null && (port < 0 || port > 65535)) {
+			throw new IllegalArgumentException("Invalid port: " + port);
+		}
 
 		ReadWriteLock lock = new ReentrantReadWriteLock();
 
@@ -219,12 +234,49 @@ public class EnigmaMcpMain {
 				.map((TypedArgTool<?> spec) -> TypedArgTool.createMcpTool(TypedArgTool.COMMON_CONFIG, spec, lock))
 				.toList();
 
-		return McpServer.sync(transport)
+		McpServer.SyncSpecification<?> specification;
+		Server httpServer = null;
+
+		if (port != null) {
+			HttpServletStreamableServerTransportProvider transport = HttpServletStreamableServerTransportProvider.builder()
+					.jsonMapper(McpJsonDefaults.getMapper())
+					.build();
+			specification = McpServer.sync(transport);
+
+			ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
+			context.setContextPath("/");
+			ServletHolder servletHolder = new ServletHolder(transport);
+			servletHolder.setAsyncSupported(true);
+			context.addServlet(servletHolder, "/mcp");
+
+			httpServer = new Server(port);
+			httpServer.setHandler(context);
+		} else {
+			StdioServerTransportProvider transport = new StdioServerTransportProvider(McpJsonDefaults.getMapper());
+			specification = McpServer.sync(transport);
+		}
+
+		McpSyncServer mcpServer = specification
 				.serverInfo("enigma-mcp", Enigma.VERSION)
 				.capabilities(McpSchema.ServerCapabilities.builder()
 						.tools(true)
 						.build())
 				.tools(tools)
 				.build();
+		onMcpServer.accept(mcpServer);
+
+		if (port != null) {
+			try {
+				httpServer.start();
+				onHttpServer.accept(httpServer);
+			} catch (Exception e) {
+				mcpServer.closeGracefully();
+				throw new IllegalStateException("Unable to start HTTP server on port " + port, e);
+			}
+
+			System.err.println("enigma-mcp server listening on http://localhost:" + httpServer.getURI().getPort() + "/mcp");
+		}
+
+		return mcpServer;
 	}
 }
