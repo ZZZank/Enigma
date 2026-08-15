@@ -5,6 +5,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Stream;
 
 import io.modelcontextprotocol.json.McpJsonDefaults;
@@ -198,6 +200,8 @@ public class EnigmaMcpMain {
 	private McpSyncServer runServer() {
 		StdioServerTransportProvider transport = new StdioServerTransportProvider(McpJsonDefaults.getMapper());
 
+		ReadWriteLock lock = new ReentrantReadWriteLock();
+
 		List<McpServerFeatures.SyncToolSpecification> tools = Stream.of(
 						new SearchEntryTool(project),
 						new GetEntryTool(project),
@@ -212,7 +216,7 @@ public class EnigmaMcpMain {
 						new ReloadMappingTool(project, this),
 						new GetEnigmaInfoTool(project, this)
 				)
-				.map((TypedArgTool<?> spec) -> TypedArgTool.createMcpTool(TypedArgTool.COMMON_CONFIG, spec))
+				.map((TypedArgTool<?> spec) -> TypedArgTool.createMcpTool(TypedArgTool.COMMON_CONFIG, spec, lock))
 				.toList();
 
 		return McpServer.sync(transport)
