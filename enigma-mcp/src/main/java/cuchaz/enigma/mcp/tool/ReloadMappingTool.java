@@ -61,7 +61,7 @@ public record ReloadMappingTool(EnigmaProject project, EnigmaMcpMain main) imple
 	public static class ArgObject {
 		@JsonProperty(defaultValue = "false")
 		@JsonPropertyDescription("In true, omitting input for 'path' and 'format' will be interpreted as CLEARING existed mapping, instead of reloading the same mapping.")
-		public boolean clear_if_all_null;
+		public boolean clear_if_all_null = false;
 		@JsonPropertyDescription("Path to mapping file. Null input implies using current mapping file path.")
 		public String path;
 		@JsonPropertyDescription("Format of mapping file. Null implies using current mapping format.")

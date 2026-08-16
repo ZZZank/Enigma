@@ -109,6 +109,6 @@ public record DecompileTool(EnigmaProject project, ClassHandleProvider classHand
 
 		@JsonProperty(defaultValue = "vineflower")
 		@JsonPropertyDescription("Decompiler to use: vineflower, cfr, procyon, bytecode, or full class name prefix of registered decompiler")
-		public String decompiler;
+		public String decompiler = "vineflower";
 	}
 }

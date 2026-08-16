@@ -115,6 +115,6 @@ public record ListMembersTool(EnigmaProject project) implements TypedArgTool<Lis
 
 		@JsonProperty(defaultValue = "all")
 		@JsonPropertyDescription("Type of members: method, field, or all")
-		public String member_type;
+		public String member_type = "all";
 	}
 }

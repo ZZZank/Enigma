@@ -169,9 +169,9 @@ public record SearchEntryTool(EnigmaProject project) implements TypedArgTool<Sea
 		public String entry_description;
 		@JsonProperty(defaultValue = "false")
 		@JsonPropertyDescription("If true, name matching will be performed on deobfuscated name instead of obfuscated name.")
-		public boolean search_by_deobf;
+		public boolean search_by_deobf = false;
 		@JsonProperty(defaultValue = "50")
 		@JsonPropertyDescription("The upper limit of the amount of entries. Negative number = no limit.")
-		public int limit;
+		public int limit = 50;
 	}
 }

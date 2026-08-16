@@ -129,11 +129,11 @@ public record FindUnmappedTool(EnigmaProject project) implements TypedArgTool<Fi
 
 		@JsonProperty(defaultValue = "50")
 		@JsonPropertyDescription("Maximum results. Negative number = no limit")
-		public int limit;
+		public int limit = 50;
 
 		@JsonProperty(defaultValue = "false")
 		@JsonPropertyDescription("If true, members will be deduplicated by its (obfuscated) name")
-		public boolean deduplicate_by_name;
+		public boolean deduplicate_by_name = false;
 	}
 
 	// Keep the existing EntryType enum (moved from FindUnmappedArg)
