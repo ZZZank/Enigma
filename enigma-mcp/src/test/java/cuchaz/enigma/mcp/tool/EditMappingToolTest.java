@@ -15,7 +15,6 @@ import cuchaz.enigma.mcp.Global;
  * Tests for {@link EditMappingTool}.
  */
 public class EditMappingToolTest extends Global {
-
 	@Before
 	public void setUp() {
 		clearMapping();

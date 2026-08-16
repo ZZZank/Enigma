@@ -14,7 +14,6 @@ import cuchaz.enigma.mcp.Global;
  * Tests for {@link GetEntryTool}.
  */
 public class GetEntryToolTest extends Global {
-
 	@Test
 	public void getClassEntry() {
 		McpSchema.CallToolResult result = CLIENT.callTool(new McpSchema.CallToolRequest(

@@ -14,7 +14,6 @@ import cuchaz.enigma.mcp.Global;
  * <p>Enum values must be lowercase to match JSON Schema.
  */
 public class FindInheritanceToolTest extends Global {
-
 	@Test
 	public void getParents() {
 		McpSchema.CallToolResult result = CLIENT.callTool(new McpSchema.CallToolRequest(

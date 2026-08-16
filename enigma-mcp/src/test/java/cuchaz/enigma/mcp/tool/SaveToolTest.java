@@ -1,6 +1,5 @@
 package cuchaz.enigma.mcp.tool;
 
-
 import java.util.Map;
 
 import io.modelcontextprotocol.spec.McpSchema;
@@ -13,7 +12,6 @@ import cuchaz.enigma.mcp.Global;
  * Tests for {@link SaveTool}.
  */
 public class SaveToolTest extends Global {
-
 	@Test
 	public void saveRequiresFormatOrExistingMapping() {
 		try {

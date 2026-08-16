@@ -15,7 +15,6 @@ import cuchaz.enigma.mcp.Global;
  * Tests for {@link ListMembersTool}.
  */
 public class ListMembersToolTest extends Global {
-
 	@Before
 	public void setUp() {
 		clearMapping();

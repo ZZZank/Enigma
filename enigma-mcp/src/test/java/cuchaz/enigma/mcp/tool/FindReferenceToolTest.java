@@ -16,7 +16,6 @@ import cuchaz.enigma.mcp.Global;
  * <p>Enum values must be lowercase to match JSON Schema.
  */
 public class FindReferenceToolTest extends Global {
-
 	@Test
 	public void referencesByUsageForClass() {
 		McpSchema.CallToolResult result = CLIENT.callTool(new McpSchema.CallToolRequest(

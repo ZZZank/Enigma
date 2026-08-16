@@ -14,7 +14,6 @@ import cuchaz.enigma.mcp.Global;
 /// (`Cannot invoke String.hashCode() because <local2> is null`),
 /// so we only test with the bytecode decompiler which is unaffected.
 public class DecompileToolTest extends Global {
-
 	@Test
 	public void decompile() {
 		McpSchema.CallToolResult result = CLIENT.callTool(new McpSchema.CallToolRequest(
@@ -26,20 +25,22 @@ public class DecompileToolTest extends Global {
 
 		Assert.assertFalse(result.isError());
 		String text = asTextContent(result.content().get(0)).text();
+		// btw, checkstyle is stupid, forcing format check even in text block
 		Assert.assertTrue(text, removeIndent(text).startsWith(removeIndent("""
 				package cuchaz.enigma.inputs.loneClass;
-				
+
 				public class LoneClass {
 					private String name;
-				
+
 					public LoneClass(String name) {
 						this.name = name;
 					}
-				
+
 					public String getName() {
 						return this.name;
 					}
 				}
+
 				""")));
 	}
 

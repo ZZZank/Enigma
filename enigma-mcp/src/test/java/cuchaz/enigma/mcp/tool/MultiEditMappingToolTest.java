@@ -1,10 +1,9 @@
 package cuchaz.enigma.mcp.tool;
 
-import static org.junit.Assert.*;
-
 import java.util.Map;
 
 import io.modelcontextprotocol.spec.McpSchema;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -14,7 +13,6 @@ import cuchaz.enigma.mcp.Global;
  * Tests for {@link MultiEditMappingTool}.
  */
 public class MultiEditMappingToolTest extends Global {
-
 	@Before
 	public void setUp() {
 		clearMapping();
@@ -37,10 +35,10 @@ public class MultiEditMappingToolTest extends Global {
 				Map.of()
 		));
 
-		assertFalse(result.isError());
-		assertEquals(2, result.content().size());
-		assertTrue(asTextContent(result.content().get(0)).text().contains("RenamedLone"));
-		assertTrue(asTextContent(result.content().get(1)).text().contains("renamedField"));
+		Assert.assertFalse(result.isError());
+		Assert.assertEquals(2, result.content().size());
+		Assert.assertTrue(asTextContent(result.content().get(0)).text().contains("RenamedLone"));
+		Assert.assertTrue(asTextContent(result.content().get(1)).text().contains("renamedField"));
 	}
 
 	@Test
@@ -60,10 +58,10 @@ public class MultiEditMappingToolTest extends Global {
 				Map.of()
 		));
 
-		assertTrue(result.isError());
-		assertEquals(2, result.content().size());
-		assertTrue(asTextContent(result.content().get(0)).text().contains("GoodName"));
-		assertTrue(asTextContent(result.content().get(1)).text().startsWith("No matching entry for: "));
+		Assert.assertTrue(result.isError());
+		Assert.assertEquals(2, result.content().size());
+		Assert.assertTrue(asTextContent(result.content().get(0)).text().contains("GoodName"));
+		Assert.assertTrue(asTextContent(result.content().get(1)).text().startsWith("No matching entry for: "));
 	}
 
 	@Test
@@ -74,7 +72,7 @@ public class MultiEditMappingToolTest extends Global {
 				Map.of()
 		));
 
-		assertFalse(result.isError());
-		assertTrue(result.content().isEmpty());
+		Assert.assertFalse(result.isError());
+		Assert.assertTrue(result.content().isEmpty());
 	}
 }

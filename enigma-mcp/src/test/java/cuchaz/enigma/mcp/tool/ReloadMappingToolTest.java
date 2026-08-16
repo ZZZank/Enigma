@@ -12,7 +12,6 @@ import cuchaz.enigma.mcp.Global;
  * Tests for {@link ReloadMappingTool}.
  */
 public class ReloadMappingToolTest extends Global {
-
 	@Test
 	public void clearMappingWithFlag() {
 		McpSchema.CallToolResult result = CLIENT.callTool(new McpSchema.CallToolRequest(

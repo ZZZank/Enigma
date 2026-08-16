@@ -17,7 +17,6 @@ import cuchaz.enigma.mcp.Global;
  * as it is confirmed to work reliably in the test JAR.
  */
 public class SearchEntryToolTest extends Global {
-
 	@Test
 	public void searchClassWithLimit() {
 		McpSchema.CallToolResult result = CLIENT.callTool(new McpSchema.CallToolRequest(

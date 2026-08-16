@@ -20,7 +20,6 @@ import cuchaz.enigma.mcp.Global;
  * well-formed output for each entry type.
  */
 public class FindUnmappedToolTest extends Global {
-
 	@Before
 	public void setUp() {
 		clearMapping();
