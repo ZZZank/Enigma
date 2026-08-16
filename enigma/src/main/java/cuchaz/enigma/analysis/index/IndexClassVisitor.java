@@ -71,7 +71,7 @@ public class IndexClassVisitor extends ClassVisitor {
 				Label start,
 				Label end,
 				int index) {
-			if (index >= paramIndexStart && index < paramCountEnd) {
+			if (index >= paramIndexStart && index < paramCountEnd && name != null) {
 				LocalVariableEntry parameterEntry = new LocalVariableEntry(method, index, name, true, null);
 				indexer.indexParameter(parameterEntry, new AccessFlags(0));
 			}

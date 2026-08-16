@@ -20,8 +20,7 @@ public class DecompileToolTest extends Global {
 		McpSchema.CallToolResult result = CLIENT.callTool(new McpSchema.CallToolRequest(
 				"decompile",
 				Map.of(
-						"class_name", "cuchaz/enigma/inputs/loneClass/LoneClass"
-				),
+						"class_name", "cuchaz/enigma/inputs/loneClass/LoneClass"),
 				Map.of()
 		));
 

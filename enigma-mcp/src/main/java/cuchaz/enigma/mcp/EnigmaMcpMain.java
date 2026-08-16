@@ -119,11 +119,10 @@ public class EnigmaMcpMain {
 
 			main.loadMapping(mappingFormat, mappingsFile);
 
-			McpSyncServer server = main.runServer(port, mcpServerClosable, httpServerClosable);
+			main.runServer(port, mcpServerClosable, httpServerClosable);
 
 			System.err.println("enigma-mcp server initialized");
 
-			server.close();
 			Thread.currentThread().join();
 		} catch (IOException | MappingParseException | IllegalArgumentException | IllegalStateException e) {
 			System.err.println("Error running enigma-mcp server!");
